@@ -9,6 +9,11 @@ if (!require(leaflet)) {
   require(leaflet)
 }
 
+if (!require(lubridate)) {
+  install.packages("lubridate")
+  require(lubridate)
+}
+
 if (!require(scales)) {
   install.packages("scales")
   require(scales)
@@ -27,6 +32,11 @@ if (!require(tidyverse)) {
 if (!require(zoo)) {
   install.packages("zoo")
   require(zoo)
+}
+
+if (!require(colourpicker)) {
+  install.packages("colourpicker")
+  require(colourpicker)
 }
 
 # Datensatz----
@@ -105,10 +115,10 @@ ui <- fluidPage(
             )
           ),
           div("Farben auswählen:"),
-          selectInput(
+          colourInput(
             inputId = "januar",
             label = "Januar",
-            choices = farben
+            value = "grey"
           ),
           selectInput(
             inputId = "februar",
@@ -254,7 +264,7 @@ server <- function(session, input, output){
     ggplot(data = data1(),
            mapping = aes(x = monthyear, y = anzahl, fill = factor(month))) +
       #      geom_bar() +
-      stat_summary(fun.y = sum, # adds up all observations for the month
+      stat_summary(fun.x = sum, # adds up all observations for the month
                    geom = "bar") + 
       scale_fill_manual("Monat", values = c("1" = input$januar, "2" = input$februar, 
                                             "3" = input$maerz, "4" = input$april, 
