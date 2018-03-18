@@ -92,6 +92,8 @@ logistikK7 <- full_join(verlassen, angekommen, by = "Datum")
 
 logistikK7[is.na(logistikK7)] <- 0 
 
+logistikK7$month <- month(logistikK7$Datum)
+
 x <- c()
 
 x[1] <- logistikK7$Warenausgang[1] - logistikK7$Wareneingang[1]
@@ -110,18 +112,18 @@ ui <- fluidPage(
   sidebarLayout( 
     sidebarPanel( 
       dateRangeInput(inputId = "zeitintervall",
-                     label = "Zeitintervall auswählen:",
+                     label = "Zeitintervall im Format yyyy-mm-dd eingeben/auswählen:",
                      language = "de",
                      start  = "2008-11-12",
                      end    = "2016-11-20",
                      min    = "2008-11-12",
                      max    = "2016-11-20",
-                     format = "dd.mm.yyyy",
+                     format = "yyyy-mm-dd",
                      weekstart = 1,
                      separator = " bis "),
       actionButton(
         inputId = "reset",
-        label = "Zurücksetzen"
+        label = "Datum zurücksetzen"
       ),
       p(),
       strong("Farben auswählen:"),
@@ -244,7 +246,8 @@ ui <- fluidPage(
         tabPanel(
           title = "Produktionsmenge",
           div("Produktionsmenge der Karosserie “K7” je Monat über den gesamten 
-              Produktionszeitraum"),
+              Produktionszeitraum."),
+          p(),
           fluidRow(
             textOutput(
               outputId = "error1"
@@ -261,9 +264,10 @@ ui <- fluidPage(
         tabPanel(
           title = "Logistik",
           div("Anzahl der Karosserien am jeweiligen Tag, die den Warenausgang bereits 
-              verlassen haben, aber noch nicht angekommen sind. Die rote vertikale Linie 
+              verlassen haben, aber noch nicht angekommen sind. Die rote horizontale Linie 
               in dem Diagramm bezeichnet die durchschnittliche Anzahl an Komponenten, 
               die noch unterwegs sind."),
+          p(),
           fluidRow(
             textOutput(
               outputId = "error2"
@@ -272,7 +276,7 @@ ui <- fluidPage(
           fluidRow(
             plotOutput(
               outputId = "logistik",
-              height = "1000px"
+              height = "750px"
             )
           )
           )
@@ -338,7 +342,7 @@ server <- function(session, input, output){
   output$produktionsmenge <- renderPlot(
     ggplot(data = data1(),
            mapping = aes(x = monthyear, y = komponenteAnzahl, fill = factor(month))) +
-      stat_summary(fun.y = sum, # adds up all observations for the month
+      stat_summary(fun.y = sum, # komponenteAnzahl aufsummieren
                    geom = "bar", width = 0.25) + 
       labs(x = "Monat", y = "Komponentenanzahl") +
       scale_y_continuous(breaks = seq(0, 4000, 250)) +
@@ -366,16 +370,23 @@ server <- function(session, input, output){
   
   output$logistik <- renderPlot(
     ggplot(data = data2(), 
-           mapping = aes(x = Datum, y = unterwegs), fill = "black") + 
+           mapping = aes(x = Datum, y = unterwegs, fill = factor(month))) + 
       stat_summary(fun.y = sum, geom = "bar", width = 0.25) +
       scale_y_continuous(breaks = seq(0, 600, 100)) +
-      geom_hline(aes(yintercept = mean(unterwegs)), show.legend = TRUE, color = "red") +
+      geom_hline(aes(yintercept = mean(unterwegs)), color = "red") +
       labs(x = "Datum", y = "Anzahl der Komponente, die unterwegs sind") +
-      coord_flip()
+      scale_fill_manual("Monat", values = c("1" = input$januar, "2" = input$februar, 
+                                            "3" = input$maerz, "4" = input$april, 
+                                            "5" = input$mai, "6" = input$juni,
+                                            "7" = input$juli, "8" = input$august, 
+                                            "9" = input$september, "10" = input$oktober,
+                                            "11" = input$november, "12" = input$dezember),
+                        labels = c("Januar", "Februar", "März", "April", "Mai", "Juni", 
+                                   "Juli", "August", "September", "Oktober", "November", 
+                                   "Dezember")) +
+      theme(legend.position = "top")
     )
 }
-
-
 
 shinyApp(ui = ui, server = server)
 
